@@ -1,73 +1,165 @@
-Assuming:
+# Convert PNG to JPEG Under 150 KB (Linux CLI)
 
-Your PNG file is named output.png
-You saved the script as compress.sh
-convert is installed
+## Prerequisites
 
-Run these commands in order:
+Install ImageMagick:
 
-1. Check ImageMagick is installed
-convert --version
+### Ubuntu / Debian
 
-If you get "command not found", install it:
-
+```bash
 sudo apt update
 sudo apt install imagemagick
-2. Save the script
+```
 
-Create the file:
+### Fedora
 
+```bash
+sudo dnf install imagemagick
+```
+
+### Arch Linux
+
+```bash
+sudo pacman -S imagemagick
+```
+
+Verify installation:
+
+```bash
+convert --version
+```
+
+---
+
+## Create the Compression Script
+
+Create a file named `compress.sh`:
+
+```bash
 nano compress.sh
+```
 
-Paste your script, then:
+Paste the following content:
 
-Press Ctrl+O → Enter (save)
-Press Ctrl+X (exit)
-3. Verify the PNG exists
-ls -lh output.png
-
-You should see the file listed.
-
-If not, either move into the correct directory:
-
-cd /path/to/image
-
-or change:
+```bash
+#!/bin/bash
 
 input="output.png"
+output="output.jpg"
+target=$((150 * 1024))  # 150 KB
 
-to the correct filename.
+for q in $(seq 95 -5 20); do
+    convert "$input" -strip -quality "$q" "$output"
+    size=$(stat -c%s "$output")
 
-4. Make the script executable
-chmod +x compress.sh
-5. Run the script
-./compress.sh
+    if [ "$size" -le "$target" ]; then
+        echo "Success: quality=$q size=$size bytes"
+        exit 0
+    fi
+done
 
-Expected output:
+echo "Could not reach target size"
+```
 
-Success: quality=80 size=145321 bytes
-6. Verify the resulting JPEG size
-ls -lh output.jpg
+Save and exit:
 
-or
+* `Ctrl + O`, then `Enter`
+* `Ctrl + X`
 
-stat -c%s output.jpg
-7. Open the image to inspect quality
-xdg-open output.jpg
+---
 
-or
+## Verify the PNG File Exists
 
-eog output.jpg
-If you get "Could not reach target size"
-
-The image is too detailed. Try shrinking dimensions slightly:
-
-convert output.png -resize 85% -strip -quality 85 output.jpg
-
-Then rerun the script.
-
-If you paste:
-
+```bash
 ls -lh output.png
+```
 
-I can estimate what JPEG quality will likely be needed to get below 150 KB.
+If the file has a different name, update the `input` variable in the script.
+
+---
+
+## Make the Script Executable
+
+```bash
+chmod +x compress.sh
+```
+
+---
+
+## Run the Script
+
+```bash
+./compress.sh
+```
+
+Example output:
+
+```text
+Success: quality=80 size=145321 bytes
+```
+
+---
+
+## Verify the Output File Size
+
+Human-readable size:
+
+```bash
+ls -lh output.jpg
+```
+
+Size in bytes:
+
+```bash
+stat -c%s output.jpg
+```
+
+---
+
+## View the Result
+
+```bash
+xdg-open output.jpg
+```
+
+or
+
+```bash
+eog output.jpg
+```
+
+---
+
+## Troubleshooting
+
+### `convert: command not found`
+
+Install ImageMagick and verify:
+
+```bash
+convert --version
+```
+
+### `stat: cannot stat 'output.jpg'`
+
+The conversion failed before the JPEG was created. Check:
+
+```bash
+ls -lh output.png
+```
+
+and verify that the input file exists.
+
+### Output is Still Larger Than 150 KB
+
+Reduce image dimensions slightly:
+
+```bash
+convert output.png -resize 85% -strip -quality 85 output.jpg
+```
+
+Then rerun the script:
+
+```bash
+./compress.sh
+```
